@@ -8,6 +8,7 @@ gcc -o nttyike -O3 main.c && ./nttyike
 ```
 
 Some useful, relevant links:
+
 [Speeding up the Number Theoretic Transform for Faster Ideal Lattice-Based Cryptography](https://link.springer.com/chapter/10.1007/978-3-319-48965-0_8)
 
 [A note on the implementation of the Number Theoretic Transform](https://eprint.iacr.org/2017/727.pdf) (NB: PDF)
