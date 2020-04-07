@@ -40,19 +40,8 @@ static uint16_t bitrev_table[1024] = {
         31,543,287,799,159,671,415,927,95,607,351,863,223,735,479,991,63,575,319,831,191,703,447,959,127,639,383,895,255,767,511,1023
 };
 
-// When the C-types fuck you, fuck them right back (as they say)
-uint64_t modq_64(uint64_t x, uint64_t NTT_MODULUS) {
-    int64_t tmp_a = (int64_t) x;
-    if (tmp_a < 0) {
-        int64_t t = tmp_a % NTT_MODULUS;
-        if (t > -NTT_MODULUS) {
-            return (t + NTT_MODULUS);
-        } else {
-            return (tmp_a % NTT_MODULUS);
-        }
-    } else {
-        return (tmp_a % NTT_MODULUS);
-    }
+uint64_t modq_64(int64_t x, uint64_t NTT_MODULUS) {
+    return x >= NTT_MODULUS ? x % NTT_MODULUS : x;
 }
 
 // Who needs Montgomery when you can just cast it LOL
@@ -133,6 +122,25 @@ static uint32_t reverse(uint32_t i, uint32_t k) {
     return x;
 }
 
+void build_table(uint64_t *a, uint64_t n, uint64_t q, uint64_t x, uint64_t y) {
+    uint64_t t, j, i;
+    uint64_t b, c;
+
+    a[0] = 0;
+    i = 1;
+    for (t=1; t<n; t <<= 1) {
+        b = modexp(x, n/(2*t), q);
+        c = modexp(y, n/(2*t), q);
+        for (j=0; j<t; j++) {
+            assert(i == t+j && i < n);
+            a[i] = b;
+            i ++;
+            b = (b * c) % q;
+        }
+    }
+}
+
+
 void build_rev_table(uint64_t *a, uint64_t n, uint64_t q, uint64_t x, uint64_t y) {
     uint64_t t, j, i, k;
     uint64_t b, c;
@@ -154,16 +162,18 @@ void build_rev_table(uint64_t *a, uint64_t n, uint64_t q, uint64_t x, uint64_t y
 
 int main() {
 
-    const uint64_t MODULUS = 1476544513;
+    const uint64_t MODULUS = 45510033409;
     const uint64_t DIMENSION = 1024;
-    const uint64_t GENERATOR = 5; //Find it yourself.
+    const uint64_t GENERATOR = 5; //Dont need it LOL
+    const uint64_t PSI = 21581764; //psi^dimension == modulus - 1 (mod modulus)
 
     uint64_t N_INVERSE = inverse(DIMENSION, MODULUS);
 
     uint64_t omegas[DIMENSION];
     uint64_t omegas_inv[DIMENSION];
 
-    uint64_t phi = modexp(GENERATOR, (MODULUS - 1)/DIMENSION, MODULUS);
+    //uint64_t phi = modexp(GENERATOR, (MODULUS - 1)/DIMENSION, MODULUS);
+    uint64_t phi = modexp(PSI, 2, MODULUS);
     uint64_t phi_inv = inverse(phi, MODULUS);
 
     build_rev_table(omegas, DIMENSION, MODULUS, 1, phi);
